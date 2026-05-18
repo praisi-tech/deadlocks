@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deadlock Simulation & Playbook</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-grad-1: #0f172a;
+            --bg-grad-2: #1e1b4b;
+            --bg-grad-3: #09090b;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --card-hover: rgba(255, 255, 255, 0.05);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-1: #38bdf8;
+            --accent-2: #818cf8;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --code-bg: #111827;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-grad-1), var(--bg-grad-2), var(--bg-grad-3));
+            background-attachment: fixed;
+            color: var(--text-main);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--accent-1), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Tabs Navigation */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 1rem;
+            animation: fadeIn 1s ease-out;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 99px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+            background: var(--card-hover);
+        }
+
+        .tab-btn.active {
+            color: #fff;
+            background: linear-gradient(to right, var(--accent-1), var(--accent-2));
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Cards & Content */
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        h2 {
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        h2::before {
+            content: '';
+            display: block;
+            width: 12px;
+            height: 24px;
+            background: linear-gradient(to bottom, var(--accent-1), var(--accent-2));
+            border-radius: 4px;
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            margin: 1.5rem 0 1rem;
+            color: var(--accent-1);
+        }
+
+        /* Grid Layouts */
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
+
+        /* Feature Boxes (For Theory) */
+        .feature-box {
+            background: rgba(0,0,0,0.2);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--accent-2);
+        }
+        
+        .feature-box h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+        
+        .feature-box p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        /* QA Box */
+        .qa-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .qa-question {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .qa-answer {
+            color: var(--text-muted);
+            padding-left: 3rem;
+            border-left: 2px solid var(--accent-1);
+            margin-left: 0.5rem;
+        }
+
+        /* Matrices */
+        .matrix-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+        }
+
+        .matrix-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--accent-1);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .matrix-row {
+            font-family: 'JetBrains Mono', monospace;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            padding: 0.25rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .matrix-row:last-child { border-bottom: none; }
+        .matrix-row span { display: inline-block; width: 25px; text-align: center; }
+        .process-label { color: var(--accent-2); font-weight: bold; }
+
+        /* Tracing Steps */
+        .step {
+            position: relative;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            border-left: 4px solid var(--card-border);
+            transition: all 0.3s ease;
+        }
+
+        .step.granted { border-left-color: var(--success); }
+        .step.denied { border-left-color: var(--danger); }
+        .step.safe { border-left-color: var(--accent-1); }
+        
+        .step:hover { background: rgba(0,0,0,0.3); }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 0.5rem;
+        }
+
+        .badge-granted { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); }
+        .badge-denied { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
+        .badge-warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2); }
+        .badge-info { background: rgba(56, 189, 248, 0.1); color: var(--accent-1); border: 1px solid rgba(56, 189, 248, 0.2); }
+
+        /* Code Block */
+        pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 16px;
+            overflow-x: auto;
+            border: 1px solid var(--card-border);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #e2e8f0;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+        }
+        
+        code { font-family: inherit; }
+        .cpp-keyword { color: #c678dd; }
+        .cpp-type { color: #e5c07b; }
+        .cpp-string { color: #98c379; }
+        .cpp-comment { color: #64748b; font-style: italic; }
+        .cpp-number { color: #d19a66; }
+        .cpp-func { color: #61afef; }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Deadlock Playbook</h1>
+        <p class="subtitle">Materi Lengkap, Tracing Matriks, Implementasi C++, & Latihan Soal (Multiple Resources)</p>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="openTab(event, 'teori')">1. Teori & Konsep (PPT)</button>
+        <button class="tab-btn" onclick="openTab(event, 'tracing')">2. Playbook & Tracing</button>
+        <button class="tab-btn" onclick="openTab(event, 'kode')">3. Source Code C++</button>
+        <button class="tab-btn" onclick="openTab(event, 'qa')">4. Soal & Latihan Tambahan</button>
+    </div>
+
+    <!-- TAB 1: TEORI DEADLOCK -->
+    <div id="teori" class="tab-content active">
+        <div class="glass-card">
+            <h2>Definisi Deadlock</h2>
+            <p style="font-size: 1.1rem; color: var(--text-muted); border-left: 4px solid var(--accent-1); padding-left: 1rem; margin-bottom: 2rem;">
+                "A set of processes is deadlocked if each process in the set is waiting for an event that only another process in the set can cause."<br>
+                <span style="font-size: 0.9rem;">— <em>Biasanya disebabkan oleh proses yang menunggu pelepasan resource yang sedang ditahan oleh proses lain.</em></span>
+            </p>
+
+            <h3>4 Kondisi Penyebab Deadlock (Four Conditions)</h3>
+            <div class="grid-4">
+                <div class="feature-box">
+                    <h4>1. Mutual Exclusion</h4>
+                    <p>Setiap resource hanya diberikan pada tepat 1 proses pada satu waktu (atau tersedia bebas).</p>
+                </div>
+                <div class="feature-box">
+                    <h4>2. Hold and Wait</h4>
+                    <p>Proses yang sedang menahan resource diperbolehkan meminta resource tambahan yang baru.</p>
+                </div>
+                <div class="feature-box">
+                    <h4>3. No Preemption</h4>
+                    <p>Resource yang sudah diberikan tidak bisa diambil secara paksa oleh sistem. Harus dilepas mandiri.</p>
+                </div>
+                <div class="feature-box">
+                    <h4>4. Circular Wait</h4>
+                    <p>Terdapat rantai melingkar dari 2 proses atau lebih di mana masing-masing menunggu resource dari member berikutnya.</p>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 3rem;">Strategi Penanganan (Strategies for Deadlocks)</h3>
+            <div class="grid-2">
+                <div class="feature-box" style="border-color: var(--success);">
+                    <h4>1. The Ostrich Algorithm</h4>
+                    <p>Berpura-pura tidak ada masalah (mengabaikan deadlock). Masuk akal jika deadlock sangat jarang terjadi dan biaya pencegahannya mahal (Pendekatan UNIX & Windows).</p>
+                </div>
+                <div class="feature-box" style="border-color: var(--warning);">
+                    <h4>2. Detection and Recovery</h4>
+                    <p>Membiarkan deadlock terjadi, lalu mendeteksinya dan melakukan <i>recovery</i>. (Fokus pada algoritma di tab Tracing).</p>
+                </div>
+                <div class="feature-box" style="border-color: var(--accent-1);">
+                    <h4>3. Dynamic Avoidance</h4>
+                    <p>Alokasi resource yang berhati-hati menggunakan algoritma seperti <i>Banker's Algorithm</i> (Safe vs Unsafe states).</p>
+                </div>
+                <div class="feature-box" style="border-color: var(--danger);">
+                    <h4>4. Prevention</h4>
+                    <p>Menyerang atau mematahkan salah satu dari 4 kondisi deadlock di atas secara struktural.</p>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 3rem;">Recovery dari Deadlock</h3>
+            <ul style="list-style-position: inside; color: var(--text-muted); margin-left: 1rem;">
+                <li style="margin-bottom: 0.5rem;"><strong>Preemption:</strong> Mengambil paksa resource dari proses lain.</li>
+                <li style="margin-bottom: 0.5rem;"><strong>Rollback:</strong> Menggunakan <i>checkpointing</i> secara berkala dan mengulang proses jika deadlock.</li>
+                <li style="margin-bottom: 0.5rem;"><strong>Killing Processes:</strong> Cara paling sederhana dan kasar; membunuh salah satu proses dalam siklus deadlock.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- TAB 2: TRACING & PLAYBOOK -->
+    <div id="tracing" class="tab-content">
+        <div class="glass-card">
+            <h2>Inisialisasi Data (Multiple Resources Detection)</h2>
+            <p style="margin-bottom: 1.5rem; color: var(--text-muted);">Berdasarkan catatan tulisan tangan, kita memiliki 4 proses (P1, P2, P3, P4) dan 5 jenis resource.</p>
+            
+            <div class="grid-2">
+                <div class="matrix-box">
+                    <div class="matrix-title">Existing Resources (E)</div>
+                    <div class="matrix-row" style="font-size: 1.2rem;"><code>[ 2, 4, 1, 4, 4 ]</code></div>
+                    
+                    <div class="matrix-title" style="margin-top: 2rem;">Initial Available (A) = E - Sum(C)</div>
+                    <div class="matrix-row" style="font-size: 1.2rem; color: var(--accent-1);"><code>[ 0, 1, 0, 2, 1 ]</code></div>
+                </div>
+                
+                <div class="matrix-box">
+                    <div class="matrix-title">Current Allocation (C)</div>
+                    <div class="matrix-row"><span class="process-label">P1</span> <code>[ 0, 1, 1, 1, 2 ]</code></div>
+                    <div class="matrix-row"><span class="process-label">P2</span> <code>[ 0, 1, 0, 1, 0 ]</code></div>
+                    <div class="matrix-row"><span class="process-label">P3</span> <code>[ 0, 0, 0, 0, 1 ]</code></div>
+                    <div class="matrix-row"><span class="process-label">P4</span> <code>[ 2, 1, 0, 0, 0 ]</code></div>
+                    <div style="text-align: right; font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">Sum: [ 2, 3, 1, 2, 3 ]</div>
+                </div>
+
+                <div class="matrix-box">
+                    <div class="matrix-title">Request Matrix (R)</div>
+                    <div class="matrix-row"><span class="process-label">P1</span> <code>[ 1, 1, 0, 2, 1 ]</code></div>
+                    <div class="matrix-row"><span class="process-label">P2</span> <code>[ 0, 1, 0, 2, 1 ]</code></div>
+                    <div class="matrix-row"><span class="process-label">P3</span> <code>[ 0, 2, 0, 3, 1 ]</code></div>
+                    <div class="matrix-row"><span class="process-label">P4</span> <code>[ 0, 2, 1, 1, 0 ]</code></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <h2>Tracing Algoritma (Step-by-step)</h2>
+            <p style="margin-bottom: 2rem; color: var(--text-muted);">Sistem mencari proses yang belum selesai di mana <code>Request &lt;= Available</code>.</p>
+            
+            <h3 style="color: var(--text-main); font-size: 1.1rem;">Iterasi 1 (Available: <code>[0, 1, 0, 2, 1]</code>)</h3>
+            <div class="step denied">
+                <p><strong>P1 Request:</strong> <code>[1, 1, 0, 2, 1]</code> vs <strong>Available:</strong> <code>[0, 1, 0, 2, 1]</code></p>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Kekurangan resource pertama (butuh 1, ada 0).</p>
+                <span class="badge badge-denied">DENIED (x)</span>
+            </div>
+            
+            <div class="step granted">
+                <p><strong>P2 Request:</strong> <code>[0, 1, 0, 2, 1]</code> vs <strong>Available:</strong> <code>[0, 1, 0, 2, 1]</code></p>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Request terpenuhi. P2 selesai dan membebaskan resource (C2).</p>
+                <p style="font-family: monospace; color: var(--accent-1); margin-top: 0.5rem;">New A = [0,1,0,2,1] + [0,1,0,1,0] = [0, 2, 0, 3, 1]</p>
+                <span class="badge badge-granted">GRANTED (v)</span>
+            </div>
+
+            <div class="step granted">
+                <p><strong>P3 Request:</strong> <code>[0, 2, 0, 3, 1]</code> vs <strong>Available:</strong> <code>[0, 2, 0, 3, 1]</code></p>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Request terpenuhi. P3 selesai dan membebaskan resource (C3).</p>
+                <p style="font-family: monospace; color: var(--accent-1); margin-top: 0.5rem;">New A = [0,2,0,3,1] + [0,0,0,0,1] = [0, 2, 0, 3, 2]</p>
+                <span class="badge badge-granted">GRANTED (v)</span>
+            </div>
+
+            <div class="step denied">
+                <p><strong>P4 Request:</strong> <code>[0, 2, 1, 1, 0]</code> vs <strong>Available:</strong> <code>[0, 2, 0, 3, 2]</code></p>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Kekurangan resource ketiga (butuh 1, ada 0).</p>
+                <span class="badge badge-denied">DENIED (x)</span>
+            </div>
+
+            <h3 style="color: var(--text-main); font-size: 1.1rem; margin-top: 2rem;">Iterasi 2 (Available: <code>[0, 2, 0, 3, 2]</code>)</h3>
+            <div class="step denied">
+                <p><strong>P1 Request:</strong> <code>[1, 1, 0, 2, 1]</code> vs <strong>Available:</strong> <code>[0, 2, 0, 3, 2]</code></p>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Kekurangan resource pertama.</p>
+                <span class="badge badge-denied">DENIED (x)</span>
+            </div>
+            
+            <div class="step denied">
+                <p><strong>P4 Request:</strong> <code>[0, 2, 1, 1, 0]</code> vs <strong>Available:</strong> <code>[0, 2, 0, 3, 2]</code></p>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Kekurangan resource ketiga.</p>
+                <span class="badge badge-denied">DENIED (x)</span>
+            </div>
+
+            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 2rem; margin-top: 2rem; text-align: center;">
+                <h3 style="color: var(--danger); margin: 0 0 0.5rem 0; font-size: 1.5rem;">Kesimpulan: Deadlock Happened!</h3>
+                <p style="color: var(--text-main);">Proses yang selesai: <strong>P2, P3</strong></p>
+                <p style="color: var(--text-muted);">Sisa proses <strong>P1</strong> dan <strong>P4</strong> mengalami kebuntuan secara sirkular dan tidak dapat melanjutkan eksekusi (menunggu pelepasan resource).</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: SOURCE CODE -->
+    <div id="kode" class="tab-content">
+        <div class="glass-card">
+            <h2>Implementasi Simulator C++</h2>
+            <p style="margin-bottom: 1.5rem; color: var(--text-muted);">Source code utuh (<code>deadlock_simulation.cpp</code>) yang mensimulasikan hasil tracing di atas menggunakan struktur data <code>std::vector</code> C++ modern.</p>
+            
+<pre><code><span class="cpp-keyword">#include</span> <span class="cpp-string">&lt;iostream&gt;</span>
+<span class="cpp-keyword">#include</span> <span class="cpp-string">&lt;vector&gt;</span>
+<span class="cpp-keyword">#include</span> <span class="cpp-string">&lt;iomanip&gt;</span>
+
+<span class="cpp-keyword">using namespace</span> std;
+
+<span class="cpp-comment">// Number of processes and resources</span>
+<span class="cpp-keyword">const int</span> P = <span class="cpp-number">4</span>; <span class="cpp-comment">// Processes</span>
+<span class="cpp-keyword">const int</span> R_num = <span class="cpp-number">5</span>; <span class="cpp-comment">// Resources</span>
+
+<span class="cpp-comment">// Function to print a vector</span>
+<span class="cpp-keyword">void</span> <span class="cpp-func">printVector</span>(<span class="cpp-keyword">const</span> <span class="cpp-type">string</span>&amp; name, <span class="cpp-keyword">const</span> <span class="cpp-type">vector</span>&lt;<span class="cpp-keyword">int</span>&gt;&amp; vec) {
+    cout &lt;&lt; name &lt;&lt; <span class="cpp-string">": [ "</span>;
+    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> v : vec) { cout &lt;&lt; v &lt;&lt; <span class="cpp-string">" "</span>; }
+    cout &lt;&lt; <span class="cpp-string">"]\n"</span>;
+}
+
+<span class="cpp-comment">// Function to check if Request &lt;= Available</span>
+<span class="cpp-keyword">bool</span> <span class="cpp-func">canBeGranted</span>(<span class="cpp-keyword">const</span> <span class="cpp-type">vector</span>&lt;<span class="cpp-keyword">int</span>&gt;&amp; request, <span class="cpp-keyword">const</span> <span class="cpp-type">vector</span>&lt;<span class="cpp-keyword">int</span>&gt;&amp; available) {
+    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = <span class="cpp-number">0</span>; i &lt; R_num; ++i) {
+        <span class="cpp-keyword">if</span> (request[i] &gt; available[i]) <span class="cpp-keyword">return false</span>;
+    }
+    <span class="cpp-keyword">return true</span>;
+}
+
+<span class="cpp-keyword">int</span> <span class="cpp-func">main</span>() {
+    <span class="cpp-comment">// 1. Data structure for the note itself (declaring the note)</span>
+    
+    <span class="cpp-comment">// Existing resource vector (E)</span>
+    <span class="cpp-type">vector</span>&lt;<span class="cpp-keyword">int</span>&gt; E = {<span class="cpp-number">2</span>, <span class="cpp-number">4</span>, <span class="cpp-number">1</span>, <span class="cpp-number">4</span>, <span class="cpp-number">4</span>};
+    
+    <span class="cpp-comment">// Current allocation matrix (C)</span>
+    <span class="cpp-type">vector</span>&lt;<span class="cpp-type">vector</span>&lt;<span class="cpp-keyword">int</span>&gt;&gt; C = {
+        {<span class="cpp-number">0</span>, <span class="cpp-number">1</span>, <span class="cpp-number">1</span>, <span class="cpp-number">1</span>, <span class="cpp-number">2</span>},
+        {<span class="cpp-number">0</span>, <span class="cpp-number">1</span>, <span class="cpp-number">0</span>, <span class="cpp-number">1</span>, <span class="cpp-number">0</span>},
+        {<span class="cpp-number">0</span>, <span class="cpp-number">0</span>, <span class="cpp-number">0</span>, <span class="cpp-number">0</span>, <span class="cpp-number">1</span>},
+        {<span class="cpp-number">2</span>, <span class="cpp-number">1</span>, <span class="cpp-number">0</span>, <span class="cpp-number">0</span>, <span class="cpp-number">0</span>}
+    };
+    
+    <span class="cpp-comment">// Request matrix (R)</span>
+    <span class="cpp-type">vector</span>&lt;<span class="cpp-type">vector</span>&lt;<span class="cpp-keyword">int</span>&gt;&gt; R = {
+        {<span class="cpp-number">1</span>, <span class="cpp-number">1</span>, <span class="cpp-number">0</span>, <span class="cpp-number">2</span>, <span class="cpp-number">1</span>},
+        {<span class="cpp-number">0</span>, <span class="cpp-number">1</span>, <span class="cpp-number">0</span>, <span class="cpp-number">2</span>, <span class="cpp-number">1</span>},
+        {<span class="cpp-number">0</span>, <span class="cpp-number">2</span>, <span class="cpp-number">0</span>, <span class="cpp-number">3</span>, <span class="cpp-number">1</span>},
+        {<span class="cpp-number">0</span>, <span class="cpp-number">2</span>, <span class="cpp-number">1</span>, <span class="cpp-number">1</span>, <span class="cpp-number">0</span>}
+    };
+    
+    <span class="cpp-comment">// Calculate Available resources (A)</span>
+    <span class="cpp-type">vector</span>&lt;<span class="cpp-keyword">int</span>&gt; A(R_num, <span class="cpp-number">0</span>);
+    <span class="cpp-type">vector</span>&lt;<span class="cpp-keyword">int</span>&gt; sum_C(R_num, <span class="cpp-number">0</span>);
+    
+    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> j = <span class="cpp-number">0</span>; j &lt; R_num; ++j) {
+        <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = <span class="cpp-number">0</span>; i &lt; P; ++i) { sum_C[j] += C[i][j]; }
+        A[j] = E[j] - sum_C[j];
+    }
+    
+    <span class="cpp-comment">// Tracing...</span>
+    <span class="cpp-type">vector</span>&lt;<span class="cpp-keyword">bool</span>&gt; finish(P, <span class="cpp-keyword">false</span>);
+    <span class="cpp-keyword">bool</span> process_executed = <span class="cpp-keyword">true</span>;
+    
+    <span class="cpp-keyword">while</span> (process_executed) {
+        process_executed = <span class="cpp-keyword">false</span>;
+        <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = <span class="cpp-number">0</span>; i &lt; P; ++i) {
+            <span class="cpp-keyword">if</span> (!finish[i]) {
+                <span class="cpp-keyword">if</span> (canBeGranted(R[i], A)) {
+                    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> j = <span class="cpp-number">0</span>; j &lt; R_num; ++j) { A[j] += C[i][j]; }
+                    finish[i] = <span class="cpp-keyword">true</span>;
+                    process_executed = <span class="cpp-keyword">true</span>;
+                }
+            }
+        }
+    }
+    
+    <span class="cpp-comment">// Result check</span>
+    <span class="cpp-keyword">bool</span> is_deadlock = <span class="cpp-keyword">false</span>;
+    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = <span class="cpp-number">0</span>; i &lt; P; ++i) {
+        <span class="cpp-keyword">if</span> (!finish[i]) { is_deadlock = <span class="cpp-keyword">true</span>; }
+    }
+    
+    <span class="cpp-keyword">if</span> (is_deadlock) cout &lt;&lt; <span class="cpp-string">"\nStatus: Deadlock happened!\n"</span>;
+    <span class="cpp-keyword">else</span> cout &lt;&lt; <span class="cpp-string">"\nStatus: System is safe. No deadlock.\n"</span>;
+    
+    <span class="cpp-keyword">return</span> <span class="cpp-number">0</span>;
+}</code></pre>
+        </div>
+    </div>
+
+    <!-- TAB 4: SOAL & LATIHAN TAMBAHAN -->
+    <div id="qa" class="tab-content">
+        <div class="glass-card">
+            <h2>Kumpulan Soal & Pembahasan Tambahan</h2>
+            <p style="margin-bottom: 2rem; color: var(--text-muted);">Berikut adalah beberapa contoh soal latihan seputar Deadlock dan Solusi Banker's Algorithm beserta pembahasannya.</p>
+
+            <div class="qa-box">
+                <div class="qa-question">
+                    <span style="color: var(--accent-1); font-size: 1.5rem;">Q1</span>
+                    <span>Terdapat 3 buah proses (P1, P2, P3) dan 3 jenis resource (A, B, C). Total resource yang ada di sistem E = <code>[10, 5, 7]</code>. Jika diketahui Current Allocation dan Maximum Need, apakah sistem dalam keadaan aman (Safe State)?</span>
+                </div>
+                <div class="qa-answer">
+                    <p style="margin-bottom: 1rem;">
+                        <strong>Current Allocation:</strong><br>
+                        P1: <code>[0, 1, 0]</code><br>
+                        P2: <code>[2, 0, 0]</code><br>
+                        P3: <code>[3, 0, 2]</code>
+                    </p>
+                    <p style="margin-bottom: 1rem;">
+                        <strong>Max Need:</strong><br>
+                        P1: <code>[7, 5, 3]</code><br>
+                        P2: <code>[3, 2, 2]</code><br>
+                        P3: <code>[9, 0, 2]</code>
+                    </p>
+                    <p><strong>Pembahasan (Banker's Algorithm):</strong></p>
+                    <ul style="list-style-position: inside; margin-bottom: 1rem;">
+                        <li><strong>Step 1 (Hitung Available):</strong> A = E - Sum(Alloc) = <code>[10, 5, 7] - [5, 1, 2] = [5, 4, 5]</code>.</li>
+                        <li><strong>Step 2 (Hitung Matrix "Need" = Max - Alloc):</strong>
+                            <br>P1: <code>[7, 4, 3]</code>
+                            <br>P2: <code>[1, 2, 2]</code>
+                            <br>P3: <code>[6, 0, 0]</code>
+                        </li>
+                        <li><strong>Step 3 (Tracing Need <= Available):</strong>
+                            <br>- Cek P1: <code>[7, 4, 3] &lt;= [5, 4, 5]</code>? Salah (karena 7 > 5).
+                            <br>- Cek P2: <code>[1, 2, 2] &lt;= [5, 4, 5]</code>? <strong>Benar!</strong> P2 dieksekusi, A baru = <code>[5, 4, 5] + [2, 0, 0] = [7, 4, 5]</code>.
+                            <br>- Cek P3: <code>[6, 0, 0] &lt;= [7, 4, 5]</code>? <strong>Benar!</strong> P3 dieksekusi, A baru = <code>[7, 4, 5] + [3, 0, 2] = [10, 4, 7]</code>.
+                            <br>- Cek P1 lagi: <code>[7, 4, 3] &lt;= [10, 4, 7]</code>? <strong>Benar!</strong> P1 dieksekusi.
+                        </li>
+                    </ul>
+                    <p><strong>Jawaban:</strong> Ya, sistem berada dalam Safe State. <i>Safe Sequence</i> yang ditemukan adalah <strong>P2 -> P3 -> P1</strong>.</p>
+                </div>
+            </div>
+
+            <div class="qa-box">
+                <div class="qa-question">
+                    <span style="color: var(--accent-1); font-size: 1.5rem;">Q2</span>
+                    <span>Menurut materi yang ada (PPT), bagaimana cara kita mencegah (Prevention) sebuah kondisi "Hold and Wait" agar Deadlock tidak terjadi?</span>
+                </div>
+                <div class="qa-answer">
+                    <p><strong>Pembahasan:</strong></p>
+                    <p>Kondisi <i>Hold and Wait</i> terjadi ketika proses menahan beberapa resource dan di saat bersamaan ia sedang meminta (request) resource baru. Untuk mencegahnya (seperti yang tercantum pada PPT Slide 23), terdapat dua cara pendekatan utama:</p>
+                    <ol style="list-style-position: inside; margin-top: 0.5rem;">
+                        <li style="margin-bottom: 0.5rem;"><strong>Require processes to request resources before starting:</strong> Meminta proses untuk "memesan" atau meminta (request) semua resource yang dibutuhkannya dari awal, sebelum eksekusinya dimulai. Jika semuanya tersedia maka langsung diambil semua. Kelemahannya: sering kali proses tidak tahu persis semua resource yang dibutuhkan di awal.</li>
+                        <li><strong>Variation (Give up all resources):</strong> Jika proses butuh resource tambahan baru, proses tersebut dipaksa untuk <strong>melepaskan (give up)</strong> semua resource yang sedang ditahannya saat ini, lalu me-request ulang semua resource yang ia butuhkan secara sekaligus.</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="qa-box">
+                <div class="qa-question">
+                    <span style="color: var(--accent-1); font-size: 1.5rem;">Q3</span>
+                    <span>Jelaskan apa kelemahan dari <i>Ostrich Algorithm</i> dan kapan algoritma ini paling sering digunakan?</span>
+                </div>
+                <div class="qa-answer">
+                    <p><strong>Pembahasan:</strong></p>
+                    <p><i>The Ostrich Algorithm</i> pada dasarnya adalah strategi sistem operasi yang mengabaikan kemungkinan terjadinya deadlock sepenuhnya (seperti burung unta yang menyembunyikan kepalanya di pasir saat ada bahaya).</p>
+                    <p style="margin-top: 0.5rem;"><strong>Kelemahan:</strong> Jika sistem terlanjur masuk kondisi deadlock, tidak ada mekanisme internal yang akan meresolvusinya. Seringkali pengguna harus me-restart aplikasi atau mematikan proses secara paksa dari <i>Task Manager</i>.</p>
+                    <p style="margin-top: 0.5rem;"><strong>Kapan Digunakan:</strong> Strategi ini digunakan jika probabilitas atau frekuensi terjadinya deadlock sangatlah rendah/jarang (<i>very rarely</i>), dan biaya untuk melakukan deteksi/pencegahan deadlock pada setiap eksekusi program sangatlah mahal (mengurangi performa PC secara drastis). <strong>Sistem Operasi modern seperti UNIX dan Windows</strong> memakai pendekatan ini demi memprioritaskan performa <i>convenience</i> ketimbang ketelitian ekstrim <i>correctness</i>.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function openTab(evt, tabName) {
+        // Get all elements with class="tab-content" and hide them
+        var tabcontent = document.getElementsByClassName("tab-content");
+        for (var i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].classList.remove("active");
+        }
+
+        // Get all elements with class="tab-btn" and remove the class "active"
+        var tablinks = document.getElementsByClassName("tab-btn");
+        for (var i = 0; i < tablinks.length; i++) {
+            tablinks[i].classList.remove("active");
+        }
+
+        // Show the current tab, and add an "active" class to the button that opened the tab
+        document.getElementById(tabName).classList.add("active");
+        evt.currentTarget.classList.add("active");
+    }
+</script>
+</body>
+</html>
